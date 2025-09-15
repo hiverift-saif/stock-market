@@ -75,7 +75,7 @@ export default function AppointmentPage() {
   const services = [
     { id: 1, name: "Consultation (30 mins)", price: "₹10,000" },
     { id: 2, name: "Webinar Access", price: "₹10,000" },
-    { id: 3, name: "1-on-1 Coaching (1 hr)", price: "₹10,0000" },
+    { id: 3, name: "1-on-1 Coaching (1 hr)", price: "₹10,0000`" },
   ];
 
   const timeSlots = ["10:00 AM", "11:00 AM", "2:00 PM", "4:00 PM"];

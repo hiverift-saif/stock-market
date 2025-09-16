@@ -13,10 +13,10 @@ const Subfooter = () => {
         <button className="w-full sm:w-auto bg-gray-900 text-white px-6 py-1 rounded-md hover:bg-gray-800 transition">
           Start Learning Today
         </button>
-        <button className="w-full sm:w-auto bg-white  text-gray-900 border border-gray-900 px-6 py-1 rounded-md md:hover:bg-gray-900 md:hover:text-white
+        {/* <button className="w-full sm:w-auto bg-white  text-gray-900 border border-gray-900 px-6 py-1 rounded-md md:hover:bg-gray-900 md:hover:text-white
          transition">
           Learn How Much $ Is
-        </button>
+        </button> */}
       </div>
     </div>
   );

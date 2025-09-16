@@ -190,7 +190,7 @@ const AdminAppointment = () => {
 
       {/* Modal */}
       {modalData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0  bg-opacity-50 flex justify-center items-center">
           <div className="bg-white rounded-lg shadow-lg w-[400px] p-6">
             <h3 className="text-lg font-semibold mb-4">
               {isEditing ? "Edit Slot" : "View Slot"}

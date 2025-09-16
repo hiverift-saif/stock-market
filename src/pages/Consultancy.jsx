@@ -1,6 +1,6 @@
 // src/pages/Consultancy.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CiSearch, CiFilter } from "react-icons/ci";
 import { Star, Clock, MessageCircle, Phone } from "lucide-react";
 import {
@@ -51,6 +51,7 @@ const Consultancy = ({ showFooter = true, fullWidth = false }) => {
   const [consultants, setConsultants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   // pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,6 +113,10 @@ const Consultancy = ({ showFooter = true, fullWidth = false }) => {
     setCurrentPage(page);
     // small UX nicety
     window.scrollTo({ top: 200, behavior: "smooth" });
+  };
+
+  const handleBook = (consultancy) => {
+    navigate("/checkout", { state: { consultancy } });
   };
 
   const renderPageButtons = () => {
@@ -300,7 +305,7 @@ const Consultancy = ({ showFooter = true, fullWidth = false }) => {
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-2 mt-3">
                       <button className="w-full bg-gray-100 text-gray-800 py-2 rounded-md hover:bg-gray-200 text-xs font-medium">View Profile</button>
-                      <button className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 text-xs font-medium flex items-center justify-center gap-1">
+                      <button onClick={() => handleBook(c)} className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 text-xs font-medium flex items-center justify-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
                           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>

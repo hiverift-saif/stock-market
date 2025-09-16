@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import axios from "axios";
 import {
   FaUser,
   FaEnvelope,
@@ -16,16 +17,8 @@ import {
   FaChevronRight,
   FaClock,
 } from "react-icons/fa";
+import config from "./config";
 
-/**
- * Trending CheckoutPage — Accent color set to:
- *   oklch(85.2% 0.199 91.936)
- *
- * The accent is provided as CSS variable --accent; a darker variant --accent-dark
- * is computed using color-mix (falls back to the same accent when unsupported).
- *
- * Paste into your project. Keep Tailwind installed.
- */
 
 const razorpayKey = "rzp_test_RD67KFzwSW83SE"; // replace when needed
 const fallbackThumb = "/fallback-course.png";
@@ -55,23 +48,44 @@ function useToasts() {
 
 export default function CheckoutPage() {
   const location = useLocation();
-  const course = location.state?.course ?? {
+  const toast = useToasts();
+
+  let item = location.state?.course || location.state?.webinar || location.state?.consultancy || {
     id: "demo-1",
     title: "Master React — Complete Guide",
     description: "Modern React from zero to pro — hooks, patterns, performance.",
     price: 1299,
     duration: "9h 12m",
-    thumbnail:
-      "https://images.unsplash.com/photo-1526378726708-81c6b6a3f2c1?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=3c9d4b8d6a1b0b8d6f7ae1f9d7f3a8d6",
+    thumbnail: "https://images.unsplash.com/photo-1526378726708-81c6b6a3f2c1?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=3c9d4b8d6a1b0b8d6f7ae1f9d7f3a8d6",
     rating: 4.9,
     students: 15840,
   };
 
-  // UI / form states
+  const isWebinar = !!location.state?.webinar;
+  const isConsultancy = !!location.state?.consultancy;
+  if (isWebinar) {
+    item.id = item._id;
+    item.duration = `${item.durationMinutes} min`;
+    item.rating = item.rating || 4.8;
+    item.students = item.attendeesCount || 0;
+    item.thumbnail = item.thumbnail || fallbackThumb;
+    item.description = item.description || "";
+  }
+  if (isConsultancy) {
+    item.id = item._id;
+    item.title = item.fullName || item.title;
+    item.description = item.bio || item.specialization || item.description;
+    item.price = item.pricePerSession || item.price || 0;
+    item.duration = item.duration || "60 min";
+    item.rating = item.rating || 4.8;
+    item.students = 0; // or some default
+    item.thumbnail = item.icon || fallbackThumb;
+  }
+
   const [dark, setDark] = useState(false);
   const [step, setStep] = useState("details"); // details | login | checkout | success
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({ email: "", password: "" ,role:'user'});
   const [address, setAddress] = useState({ firstName: "", lastName: "", email: "", phone: "", fullAddress: "" });
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -79,12 +93,12 @@ export default function CheckoutPage() {
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [errors, setErrors] = useState({});
-  const toast = useToasts();
+  const [accessToken, setAccessToken] = useState("");
 
-  // Derived values
-  const net = Math.max(0, (Number(course.price) || 0) - (Number(discount) || 0));
+  // Derived
+  const net = Math.max(0, (Number(item.price) || 0) - (Number(discount) || 0));
   const formattedNet = useMemo(() => formatINR(net), [net]);
-  const studentsDisplay = useMemo(() => (course?.students ?? 0).toLocaleString(), [course]);
+  const studentsDisplay = useMemo(() => (item?.students ?? 0).toLocaleString(), [item]);
 
   useEffect(() => {
     if (dark) document.documentElement.classList.add("dark");
@@ -108,9 +122,8 @@ export default function CheckoutPage() {
       toast.push("Razorpay script failed to load — payment may not work", "error", 5000);
     };
     document.body.appendChild(s);
-  }, []); // eslint-disable-line
+  }, []);
 
-  // validators and handlers
   const validateLogin = () => {
     const e = {};
     if (!loginData.email || !/^\S+@\S+\.\S+$/.test(loginData.email)) e.email = "Invalid email";
@@ -118,6 +131,7 @@ export default function CheckoutPage() {
     setErrors(e);
     return Object.keys(e).length === 0;
   };
+
   const validateAddress = () => {
     const e = {};
     if (!address.firstName) e.firstName = "Required";
@@ -129,19 +143,35 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0;
   };
 
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     if (!validateLogin()) return toast.push("Fix login fields", "error");
-    setIsLoggedIn(true);
-    setStep("checkout");
-    toast.push("Welcome back — ready to checkout", "success");
+
+    try {
+      const res = await axios.post(`${config.BASE_URL}auth/login`, loginData);
+      if (res.data?.statusCode === 200) {
+        const user = res.data.result.user;
+        const token = res.data.result.accessToken;
+        setAccessToken(token);
+        setIsLoggedIn(true);
+        // prefill address from user data
+        setAddress((s) => ({ ...s, firstName: user.name || "", email: user.email || "" }));
+        setStep("checkout");
+        toast.push("Login successful — ready to checkout", "success");
+      } else {
+        toast.push(res.data?.message || "Login failed", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.push(err.response?.data?.message || "API error — check credentials", "error");
+    }
   }
 
   function applyCoupon() {
     const code = coupon.trim().toUpperCase();
     if (!code) return toast.push("Enter a coupon code", "info");
     if (code === "TREND25") {
-      const d = Math.floor(course.price * 0.25);
+      const d = Math.floor(item.price * 0.25);
       setDiscount(d);
       toast.push(`TREND25 applied — ₹${d} off`, "success");
       return;
@@ -172,7 +202,7 @@ export default function CheckoutPage() {
       amount: amountPaise,
       currency: "INR",
       name: "My Courses",
-      description: course.title,
+      description: item.title,
       handler: function (resp) {
         setLoadingPayment(false);
         setStep("success");
@@ -202,7 +232,12 @@ export default function CheckoutPage() {
     setErrors({});
     setShowConfirm(false);
     setLoadingPayment(false);
+    setAccessToken("");
   }
+
+
+
+
 
   return (
     <>
@@ -252,22 +287,22 @@ export default function CheckoutPage() {
             <div className="rounded-3xl overflow-hidden shadow-2xl relative">
               <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${"var(--accent)"}33, transparent 70%)`, opacity: 0.08, pointerEvents: "none" }} />
               <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 bg-white/80 dark:bg-slate-800/70 backdrop-blur-sm">
-                <SafeImg src={course.thumbnail} alt={course.title} className="w-36 h-36 rounded-xl shadow-lg object-cover" />
+                <SafeImg src={item.thumbnail} alt={item.title} className="w-36 h-36 rounded-xl shadow-lg object-cover" />
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{course.title}</h1>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 truncate">{course.description}</p>
+                  <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">{item.title}</h1>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 truncate">{item.description}</p>
                   <div className="mt-4 flex gap-3 flex-wrap">
                     <div className="px-3 py-1 rounded-full bg-white border text-sm flex items-center gap-2">
-                      <FaStar className="text-yellow-400" /> <span className="font-medium">{course.rating}</span>
+                      <FaStar className="text-yellow-400" /> <span className="font-medium">{item.rating}</span>
                     </div>
-                    <div className="px-3 py-1 rounded-full bg-white/80 border text-sm">{course.duration}</div>
+                    <div className="px-3 py-1 rounded-full bg-white/80 border text-sm">{item.duration}</div>
                     <div className="px-3 py-1 rounded-full bg-white/80 border text-sm">{studentsDisplay} students</div>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-3">
                   <div className="text-sm text-slate-500 dark:text-slate-300">Price</div>
-                  <div className="text-3xl font-bold" style={{ color: "var(--accent)" }}>₹{course.price}</div>
+                  <div className="text-3xl font-bold" style={{ color: "var(--accent)" }}>₹{item.price}</div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setStep(isLoggedIn ? "checkout" : "login")}
@@ -360,7 +395,7 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border">
-                      <div className="flex justify-between text-sm text-slate-600"><div>Subtotal</div><div>₹{course.price}</div></div>
+                      <div className="flex justify-between text-sm text-slate-600"><div>Subtotal</div><div>₹{item.price}</div></div>
                       <div className="flex justify-between text-sm text-slate-600 mt-1"><div>Discount</div><div>- ₹{discount}</div></div>
                       <div className="flex justify-between text-base font-semibold mt-2"><div>Total</div><div style={{ color: "var(--accent)" }}>₹{net}</div></div>
                     </div>
@@ -383,9 +418,9 @@ export default function CheckoutPage() {
                     <FaCheck className="text-[color:var(--accent)] text-3xl" />
                   </div>
                   <h3 className="text-xl font-bold">Payment Complete</h3>
-                  <p className="mt-2 text-slate-600 dark:text-slate-300">You're enrolled — check My Courses to start learning.</p>
+                  <p className="mt-2 text-slate-600 dark:text-slate-300">{isWebinar ? "You're registered — check My Webinars." : isConsultancy ? "Consultation booked — check My Consultations." : "You're enrolled — check My Courses to start learning."}</p>
                   <div className="mt-6 flex gap-3 justify-center">
-                    <button onClick={() => (window.location.href = "/my-courses")} className="py-3 px-6 rounded-xl" style={{ background: "var(--accent)", color: "white" }}>Go to My Courses</button>
+                    <button onClick={() => (window.location.href = isWebinar ? "/my-webinars" : isConsultancy ? "/my-consultations" : "/my-courses")} className="py-3 px-6 rounded-xl" style={{ background: "var(--accent)", color: "white" }}>Go to My {isWebinar ? "Webinars" : isConsultancy ? "Consultations" : "Courses"}</button>
                     <button onClick={resetAll} className="py-3 px-6 rounded-xl border">Buy Another</button>
                   </div>
                 </div>
@@ -403,7 +438,7 @@ export default function CheckoutPage() {
               </div>
               <div className="p-4 rounded-xl border bg-white dark:bg-slate-800">
                 <div className="font-semibold">High-rated</div>
-                <div className="text-sm text-slate-500 mt-1">{course.rating} star average</div>
+                <div className="text-sm text-slate-500 mt-1">{item.rating} star average</div>
               </div>
             </div>
           </div>
@@ -412,17 +447,17 @@ export default function CheckoutPage() {
           <aside className="space-y-4">
             <div className="sticky top-28 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow">
               <div className="flex items-center gap-3">
-                <SafeImg src={course.thumbnail} alt="thumb" className="w-14 h-14 rounded-lg object-cover" />
+                <SafeImg src={item.thumbnail} alt="thumb" className="w-14 h-14 rounded-lg object-cover" />
                 <div>
-                  <div className="font-semibold">{course.title}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-300">{course.duration}</div>
+                  <div className="font-semibold">{item.title}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-300">{item.duration}</div>
                 </div>
               </div>
 
               <div className="mt-4 relative">
                 <div className="rounded-xl p-4" style={{ background: `linear-gradient(180deg, ${"var(--accent)"}10, transparent)`, border: "1px solid rgba(0,0,0,0.04)" }}>
                   <div className="flex justify-between items-start">
-                    <div className="text-sm opacity-90">{course.title}</div>
+                    <div className="text-sm opacity-90">{item.title}</div>
                     <div className="text-xs opacity-80">Order</div>
                   </div>
                   <div className="mt-6 text-2xl font-bold" style={{ color: "var(--accent)" }}>{formattedNet}</div>
@@ -457,7 +492,7 @@ export default function CheckoutPage() {
                 <button onClick={() => setShowConfirm(false)} className="p-2 rounded-full border"><FaTimes /></button>
               </div>
               <div className="mt-4 text-sm">
-                <div className="flex justify-between"><div>{course.title}</div><div>₹{course.price}</div></div>
+                <div className="flex justify-between"><div>{item.title}</div><div>₹{item.price}</div></div>
                 <div className="flex justify-between mt-2"><div>Discount</div><div>- ₹{discount}</div></div>
                 <div className="flex justify-between mt-3 font-semibold"><div>Total</div><div style={{ color: "var(--accent)" }}>₹{net}</div></div>
               </div>

@@ -7,26 +7,39 @@ export async function getServices() {
 }
 
 // month format: "2025-09"
-export async function getAvailability(serviceId, month) {
+export async function getAvailability(serviceId: any, month: string) {
   const res = await client.get(`/availability/${serviceId}?month=${month}`);
   console.log('res availivility',res)
   return res.data.result ?? res.data;
 }
 
 // create booking (returns bookingId, amount, paymentRef)
-export async function createBooking({ serviceId, slotId, userId, paymentMethod = 'mock' }) {
+interface CreateBookingParams {
+  serviceId: string;
+  slotId: string;
+  userId: string;
+  paymentMethod?: string;
+}
+
+export async function createBooking({ serviceId, slotId, userId, paymentMethod = 'mock' }: CreateBookingParams) {
   const res = await client.post('/bookings', { serviceId, slotId, userId, paymentMethod });
   return res.data.result ?? res.data;
 }
 
 // confirm payment
-export async function confirmPayment({ bookingId, paymentRef, status = 'success' }) {
+interface ConfirmPaymentParams {
+  bookingId: string;
+  paymentRef: string;
+  status?: string;
+}
+
+export async function confirmPayment({ bookingId, paymentRef, status = 'success' }: ConfirmPaymentParams) {
   const res = await client.post('/bookings/confirm', { bookingId, paymentRef, status });
   return res.data.result ?? res.data;
 }
 
 // get my bookings
-export async function getMyBookings(userId) {
+export async function getMyBookings(userId: any) {
   const res = await client.get(`/bookings/user/${userId}`);
   return res.data.result ?? res.data;
 }

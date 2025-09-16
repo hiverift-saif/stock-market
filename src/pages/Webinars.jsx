@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FaChartLine,
   FaCogs,
@@ -18,12 +19,15 @@ import {
 } from "lucide-react";
 import Footer from "./Footer";
 
-const API_BASE = "http://jugnufoundation.org/api/v1"; // ✅ apna base URL
+const API_BASE = "https://www.cakistockmarket.com/api/v1/"; // ✅ apna base URL
+
+
 
 const Webinars = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [webinars, setWebinars] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const specializations = [
     { name: "Market Analysis", icon: <FaChartLine />, active: true },
@@ -58,6 +62,10 @@ const Webinars = () => {
   const filteredWebinars = webinars.filter(
     (webinar) => webinar.status?.toLowerCase() === activeTab
   );
+
+  const handleRegister = (webinar) => {
+    navigate("/checkout", { state: { webinar } });
+  };
 
   return (
     <div className="pt-24">
@@ -181,7 +189,7 @@ const Webinars = () => {
                   {webinar.price > 0 ? `₹${webinar.price}` : "Free"}
                 </div>
                 <div className="flex items-center space-x-3">
-                  <button className="px-4 py-2 rounded-md text-xs font-medium flex items-center space-x-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 transition-colors">
+                  <button onClick={() => handleRegister(webinar)} className="px-4 py-2 rounded-md text-xs font-medium flex items-center space-x-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 transition-colors">
                     {webinar.price > 0 ? "Register Now" : "Register Free"}
                   </button>
                 </div>

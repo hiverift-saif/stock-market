@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Eye, Plus, Search, ChevronLeft, ChevronRight, X, Edit2, Trash2 } from "lucide-react";
+import config from "../pages/config";
 
-const BASE_URL = "http://69.62.78.239:4000/api/v1";
+const BASE_URL = config.BASE_URL;
+
 
 const AdminCourseTable = () => {
   const [courses, setCourses] = useState([]);
@@ -22,7 +24,7 @@ const AdminCourseTable = () => {
     duration: "",
     price: "",
     level: "Beginner",
-    mode: "Online",
+    mode: "Live",
     syllabus: [],
     subCategoryId: "",
     rating: 0,
@@ -105,7 +107,7 @@ const handleSubmit = async (e) => {
   try {
     const url = editCourseId
       ? `${BASE_URL}/courses/updateCourse/${editCourseId}`
-      : `${BASE_URL}/courses/createCourse`;
+      : `${BASE_URL}/courses/createCrouses`;
     const method = editCourseId ? "PUT" : "POST";
 
     const form = new FormData();
@@ -153,7 +155,7 @@ const handleSubmit = async (e) => {
       duration: course.duration || "",
       price: course.price || "",
       level: course.level || "Beginner",
-      mode: course.mode || "Online",
+      mode: course.mode || "Live",
       syllabus: Array.isArray(course.syllabus) ? course.syllabus : [],
       subCategoryId: course.subCategoryId || "",
       rating: course.rating || 0,
@@ -189,7 +191,7 @@ const handleSubmit = async (e) => {
       duration: "",
       price: "",
       level: "Beginner",
-      mode: "Online",
+      mode: "Live",
       syllabus: [],
       subCategoryId: "",
       rating: 0,
@@ -231,44 +233,61 @@ const handleSubmit = async (e) => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto bg-white rounded-xl shadow">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100 text-left text-sm font-semibold text-gray-600">
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Instructor</th>
-              <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentCourses.map((course, idx) => (
-              <tr key={course._id} className="border-t text-sm">
-                <td className="px-4 py-3">{indexOfFirst + idx + 1}</td>
-                <td className="px-4 py-3">{course.title}</td>
-                <td className="px-4 py-3">{course.instructor}</td>
-                <td className="px-4 py-3">₹{course.price}</td>
-                <td className="px-4 py-3">{course.categoryId?.name || "-"}</td>
-                <td className="px-4 py-3 flex gap-2">
-                  <button onClick={() => handleEdit(course)} className="p-2 bg-yellow-100 text-yellow-600 rounded-lg">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDelete(course._id)} className="p-2 bg-red-100 text-red-600 rounded-lg">
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {currentCourses.length === 0 && (
-              <tr>
-                <td colSpan="6" className="px-4 py-6 text-center text-gray-500">No courses found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+{/* Table */}
+{/* Table */}
+<div className="overflow-x-auto bg-white rounded-xl shadow">
+  <table className="w-full border-collapse">
+    <thead>
+      <tr className="bg-gray-100 text-left text-sm text-gray-600">
+        <th className="px-4 py-3 border-b border-gray-200">#</th>
+        <th className="px-4 py-3 border-b border-gray-200">Name</th>
+        <th className="px-4 py-3 border-b border-gray-200">Instructor</th>
+        <th className="px-4 py-3 border-b border-gray-200">Price</th>
+        <th className="px-4 py-3 border-b border-gray-200">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {currentCourses.map((course, idx) => (
+        <tr
+          key={course._id}
+          className="border-b border-gray-200 text-sm hover:bg-gray-50 transition"
+        >
+          <td className="px-4 py-3">{indexOfFirst + idx + 1}</td>
+          <td className="px-4 py-3">{course.title}</td>
+          <td className="px-4 py-3">{course.instructor}</td>
+          <td className="px-4 py-3">₹{course.price}</td>
+          <td className="px-4 py-3 flex gap-2">
+            <button
+              onClick={() => handleEdit(course)}
+              className="p-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200"
+            >
+              <Edit2 size={16} />
+            </button>
+            <button
+              onClick={() => handleDelete(course._id)}
+              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+            >
+              <Trash2 size={16} />
+            </button>
+          </td>
+        </tr>
+      ))}
+
+      {currentCourses.length === 0 && (
+        <tr>
+          <td
+            colSpan="5"
+            className="px-4 py-6 text-center text-gray-500 border-t border-gray-200"
+          >
+            No courses found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -326,11 +345,13 @@ const handleSubmit = async (e) => {
       <input
         type="number"
         name="price"
+          min="0"
         value={formData.price}
         onChange={handleInputChange}
         className="w-full border px-3 py-2 rounded-xl"
         required
       />
+
     </div>
     <div>
       <label className="font-semibold text-gray-700">Duration *</label>
@@ -368,9 +389,9 @@ const handleSubmit = async (e) => {
         onChange={handleInputChange}
         className="w-full border px-3 py-2 rounded-xl"
       >
-        <option>Online</option>
         <option>Live</option>
-        <option>Offline</option>
+        <option>Recorded</option>
+
       </select>
     </div>
   </div>
@@ -440,16 +461,26 @@ const handleSubmit = async (e) => {
   </div>
 
   {/* Syllabus */}
-  <div>
-    <label className="font-semibold text-gray-700">Syllabus (comma separated)</label>
-    <input
-      type="text"
-      name="syllabus"
-      value={formData.syllabus.join(", ")}
-      onChange={handleInputChange}
-      className="w-full border px-3 py-2 rounded-xl"
-    />
-  </div>
+<div>
+  <label className="font-semibold text-gray-700">
+    Syllabus (comma separated)
+  </label>
+  <input
+    type="text"
+    name="syllabus"
+    value={formData.syllabus.join(", ")}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        syllabus: e.target.value.split(",").map((s) => s.trim()),
+      }))
+    }
+    className="w-full border px-3 py-2 rounded-xl"
+  />
+</div>
+
+
+
 
   {/* Image */}
   <div>

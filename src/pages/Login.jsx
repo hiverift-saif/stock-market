@@ -162,10 +162,18 @@ function LoginPage() {
         <div className="border-t my-6"></div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-600">
-          New to CA ki Stock Market?{" "}
-          <a href="#" className="text-yellow-600 hover:underline">Register here</a>
-        </p>
+    <p className="text-center text-sm text-gray-600">
+  New to CA ki Stock Market?{" "}
+  <button
+    type="button"
+    onClick={() => navigate("/signup")}
+    className="text-yellow-600 hover:underline"
+  >
+    Register here
+  </button>
+</p>
+
+
       </div>
 
       {/* Security Note */}

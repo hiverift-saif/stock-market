@@ -249,13 +249,28 @@
 
 
 
-import Consultancy from '../pages/Consultancy'
+// import Consultancy from '../pages/Consultancy'
+// import React from 'react'
+
+// const MyConsultations = () => {
+//   return (
+//     <div className="pb-10">
+//       <Consultancy showFooter={false} fullWidth={true} compact={true} />
+//     </div>
+//   )
+// }
+
+// export default MyConsultations
+
+
 import React from 'react'
 
 const MyConsultations = () => {
   return (
-    <div className="pb-10">
-      <Consultancy showFooter={false} fullWidth={true} compact={true} />
+    <div className='justify-center items-center flex h-screen font-sans'>
+
+      <h1 className='text-2xl font-semibold'>My consaltancy comming  Page Coming Soon...</h1>
+      
     </div>
   )
 }

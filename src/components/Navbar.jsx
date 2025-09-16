@@ -9,7 +9,7 @@ function Navbar() {
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Courses", path: "/courses" },
-    { name: "Consultancy", path: "/consultancy" },
+    // { name: "Consultancy", path: "/consultancy" },
     { name: "Webinars", path: "/webinars" },
     { name: "About Us", path: "/about" },
     { name: "FAQ", path: "/faq" },

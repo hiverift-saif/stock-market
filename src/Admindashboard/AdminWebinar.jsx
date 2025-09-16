@@ -10,11 +10,15 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import config from "../pages/config"; // ✅ BASE_URL from config
 
+
+
 const AdminWebinarTable = () => {
   const [webinars, setWebinars] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [categories, setCategories] = useState([]);
+const [subCategories, setSubCategories] = useState([]);
   const [newWebinar, setNewWebinar] = useState({
     title: "",
     presenter: "",
@@ -25,14 +29,19 @@ const AdminWebinarTable = () => {
     status: "upcoming",
     agenda: [],
     newAgenda: "",
+    categoryId: "",    // ✅ added
+  subCategoryId: ""
   });
 
   // Fetch webinars from API
   useEffect(() => {
     fetch(`${config.BASE_URL}webinars`)
       .then((res) => res.json())
-      .then((data) => setWebinars(data.result || []))
+      .then((data) => setWebinars(data.result  || []))
+      
       .catch((err) => console.error("Error fetching webinars:", err));
+      
+      
   }, []);
 
   // Save or Update Webinar
@@ -55,13 +64,18 @@ const AdminWebinarTable = () => {
         price: Number(newWebinar.price),
         status: newWebinar.status,
         agenda: newWebinar.agenda,
+        categoryId: newWebinar.categoryId,     // ✅ added
+  subCategoryId: newWebinar.subCategoryId, // ✅ added
       };
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify(bodyData),
+        
       });
+
 
       const data = await res.json();
       if (!res.ok) return alert(data.message || "Error saving webinar");
@@ -120,6 +134,41 @@ const AdminWebinarTable = () => {
       alert("Error deleting webinar");
     }
   };
+
+
+// Categories fetch 
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(`${config.BASE_URL}categories`);
+      const data = await res.json();
+      setCategories(Array.isArray(data.result) ? data.result : []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+  fetchCategories();
+}, []);
+
+// SubCategories fetch 
+
+
+useEffect(() => {
+  if (!newWebinar.categoryId) return;
+  const fetchSubCategories = async () => {
+    try {
+      const res = await fetch(
+        `${config.BASE_URL}categories/${newWebinar.categoryId}/subcategories`
+      );
+      const data = await res.json();
+      setSubCategories(Array.isArray(data.result) ? data.result : []);
+    } catch (err) {
+      console.error("Error fetching subcategories:", err);
+    }
+  };
+  fetchSubCategories();
+}, [newWebinar.categoryId]);
+
 
   const addAgenda = () => {
     if (newWebinar.newAgenda.trim() !== "") {
@@ -215,58 +264,171 @@ const AdminWebinarTable = () => {
             </div>
 
             {/* Form Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Title"
-                value={newWebinar.title}
-                onChange={(e) => setNewWebinar({ ...newWebinar, title: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-              <input
-                type="text"
-                placeholder="Presenter"
-                value={newWebinar.presenter}
-                onChange={(e) => setNewWebinar({ ...newWebinar, presenter: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-              <DatePicker
-                selected={newWebinar.startDate}
-                onChange={(date) => setNewWebinar({ ...newWebinar, startDate: date })}
-                showTimeSelect
-                dateFormat="Pp"
-                className="border px-3 py-2 rounded w-full"
-              />
-              <input
-                type="number"
-                placeholder="Duration (minutes)"
-                value={newWebinar.durationMinutes}
-                onChange={(e) => setNewWebinar({ ...newWebinar, durationMinutes: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-              <input
-                type="number"
-                placeholder="Price"
-                value={newWebinar.price}
-                onChange={(e) => setNewWebinar({ ...newWebinar, price: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              />
-              <select
-                value={newWebinar.status}
-                onChange={(e) => setNewWebinar({ ...newWebinar, status: e.target.value })}
-                className="border px-3 py-2 rounded w-full"
-              >
-                <option value="upcoming">Upcoming</option>
-                <option value="live">Live</option>
-                <option value="recorded">Recorded</option>
-              </select>
-              <textarea
-                placeholder="Description"
-                value={newWebinar.description}
-                onChange={(e) => setNewWebinar({ ...newWebinar, description: e.target.value })}
-                className="border px-3 py-2 rounded w-full col-span-2"
-              />
-            </div>
+    {/* Form Fields */}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  {/* Title */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Title
+    </label>
+    <input
+      type="text"
+      aria-label="Title"
+      placeholder="Enter webinar title"
+      value={newWebinar.title}
+      onChange={(e) =>
+        setNewWebinar({ ...newWebinar, title: e.target.value })
+      }
+      className="border px-3 py-2 rounded w-full"
+    />
+  </div>
+
+
+
+
+
+  {/* Presenter */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Presenter
+    </label>
+    <input
+      type="text"
+      placeholder="Enter presenter name"
+      value={newWebinar.presenter}
+      onChange={(e) =>
+        setNewWebinar({ ...newWebinar, presenter: e.target.value })
+      }
+      className="border px-3 py-2 rounded w-full"
+    />
+  </div>
+
+  {/* Date & Time */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Start Date & Time
+    </label>
+    <DatePicker
+      selected={newWebinar.startDate}
+      onChange={(date) => setNewWebinar({ ...newWebinar, startDate: date })}
+      showTimeSelect
+      dateFormat="Pp"
+      className="border px-3 py-2 rounded w-full"
+    />
+  </div>
+
+  {/* Duration */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Duration (minutes)
+    </label>
+    <input
+      type="number"
+      min="0"
+      placeholder="Enter duration"
+      value={newWebinar.durationMinutes}
+      onChange={(e) =>
+        setNewWebinar({ ...newWebinar, durationMinutes: e.target.value })
+      }
+      className="border px-3 py-2 rounded w-full"
+    />
+  </div>
+
+  {/* Price */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Price
+    </label>
+    <input
+     min="0"
+      type="number"
+      placeholder="Enter price"
+      value={newWebinar.price}
+      onChange={(e) =>
+        setNewWebinar({ ...newWebinar, price: e.target.value })
+      }
+      className="border px-3 py-2 rounded w-full"
+    />
+  </div>
+
+  {/* Status */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Status
+    </label>
+    <select
+      value={newWebinar.status}
+      onChange={(e) =>
+        setNewWebinar({ ...newWebinar, status: e.target.value })
+      }
+      className="border px-3 py-2 rounded w-full"
+    >
+      <option value="upcoming">Upcoming</option>
+      <option value="live">Live</option>
+      <option value="recorded">Recorded</option>
+    </select>
+  </div>
+
+
+
+    {/* Category */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Category
+  </label>
+  <select
+    value={newWebinar.categoryId}
+    onChange={(e) =>
+      setNewWebinar({ ...newWebinar, categoryId: e.target.value })
+    }
+    className="border px-3 py-2 rounded w-full"
+  >
+    <option value="">Select Category</option>
+    {categories.map((cat) => (
+      <option key={cat._id} value={cat._id}>
+        {cat.name}
+      </option>
+    ))}
+  </select>
+</div>
+
+{/* SubCategory */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    SubCategory
+  </label>
+  <select
+    value={newWebinar.subCategoryId}
+    onChange={(e) =>
+      setNewWebinar({ ...newWebinar, subCategoryId: e.target.value })
+    }
+    className="border px-3 py-2 rounded w-full"
+  >
+    <option value="">Select SubCategory</option>
+    {subCategories.map((sub) => (
+      <option key={sub._id} value={sub._id}>
+        {sub.name}
+      </option>
+    ))}
+  </select>
+</div>
+
+  {/* Description */}
+  <div className="sm:col-span-2">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Description
+    </label>
+    <textarea
+      placeholder="Enter description"
+      value={newWebinar.description}
+      onChange={(e) =>
+        setNewWebinar({ ...newWebinar, description: e.target.value })
+      }
+      className="border px-3 py-2 rounded w-full"
+    />
+  </div>
+</div>
+
 
             {/* Agenda */}
             <div className="mt-2">

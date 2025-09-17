@@ -261,7 +261,7 @@ export default function CheckoutPage() {
         `}
       </style>
 
-      <div className={`min-h-screen py-12 px-4 ${dark ? "bg-slate-900 text-slate-100" : "bg-gradient-to-b from-pink-50 via-white to-slate-50"}`}>
+      <div className={`min-h-screen py-12 px-4 ${dark ? "bg-slate-900 text-slate-100" : "bg-gradient-to-b from-pink-50 via-white to-slate-50 mt-10"}`}>
         <div className="max-w-6xl mx-auto flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <div className="font-extrabold text-xl" style={{ color: "var(--accent)" }}>EduTrend</div>

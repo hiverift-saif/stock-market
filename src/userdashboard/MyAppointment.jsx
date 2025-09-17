@@ -263,16 +263,96 @@
 // export default MyConsultations
 
 
-import React from 'react'
+// import React from 'react'
 
-const MyConsultations = () => {
-  return (
-    <div className='justify-center items-center flex h-screen font-sans'>
+// const MyAppointment = () => {
+//   return (
+//     <div className='justify-center items-center flex h-screen font-sans'>
 
-      <h1 className='text-2xl font-semibold'>My consaltancy comming  Page Coming Soon...</h1>
+//       <h1 className='text-2xl font-semibold'>My MyAppointment comming  Page Coming Soon...</h1>
       
-    </div>
-  )
-}
+//     </div>
+//   )
+// }
 
-export default MyConsultations
+// export default MyAppointment
+// src/pages/MyAppointment.jsx
+import React, { useEffect, useState } from "react";
+import moment from "moment";
+import { getMyBookings } from "../Api/bookings/bookings"; // backend call for user bookings
+
+const MyAppointment = () => {
+  const [myBookings, setMyBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMyBookings = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setMyBookings([]);
+          setLoading(false);
+          return;
+        }
+
+        const res = await getMyBookings(token); // API call
+        const bookings = res.result ?? [];
+        setMyBookings(bookings);
+      } catch (err) {
+        console.error("Error fetching appointments:", err);
+        setMyBookings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyBookings();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen font-sans">
+        <h1 className="text-xl font-semibold">Loading appointments...</h1>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 space-y-6">
+      <h1 className="text-2xl font-bold mb-6">My Appointments</h1>
+
+      {myBookings.length === 0 ? (
+         <div className="flex items-center justify-center h-screen ">
+        <p className="text-gray-600 text-lg bg-yellow-100 font-sans h-100 w-100 flex justify-center items-center rounded shadow-2xl">You haven’t enrolled in any Appointment yet.</p>
+      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {myBookings.map((booking) => (
+            <div key={booking.id} className="bg-white p-4 rounded-xl shadow-md border">
+              <h2 className="font-semibold text-lg">{booking.serviceName}</h2>
+              <p className="text-gray-600">
+                <strong>Date:</strong> {moment(booking.date).format("DD MMM YYYY")}
+              </p>
+              <p className="text-gray-600">
+                <strong>Slot:</strong> {booking.slotLabel}
+              </p>
+              <p className="text-gray-600">
+                <strong>Status:</strong>{" "}
+                <span className={booking.status === "confirmed" ? "text-green-600" : "text-red-600"}>
+                  {booking.status}
+                </span>
+              </p>
+              {booking.amount && (
+                <p className="text-gray-600">
+                  <strong>Amount:</strong> ₹{booking.amount}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MyAppointment;

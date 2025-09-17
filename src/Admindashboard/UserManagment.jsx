@@ -1,203 +1,387 @@
-import React, { useState } from "react";
-import { Eye, Edit, Trash2, Plus, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff, Plus, X } from "lucide-react";
+import axios from "axios";
+import config from "../pages/config";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+
+// Centralized constants for pagination
+const CONST = {
+  ITEMS_PER_PAGE: 10, // Number of users per page
+  PAGINATION_MAX_BUTTONS: 5, // Max page buttons to show
+  ACTIVE_PAGE_CLASS: "bg-yellow-400 text-black shadow-md scale-105",
+};
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([
-    { id: 1, name: "Rajesh Kumar", email: "rajesh@email.com", role: "Admin", status: "Active", createdAt: "2025-09-01" },
-    { id: 2, name: "Priya Sharma", email: "priya@email.com", role: "User", status: "Inactive", createdAt: "2025-09-05" },
-    { id: 3, name: "Amit Patel", email: "amit@email.com", role: "Moderator", status: "Active", createdAt: "2025-09-08" },
-  ]);
-
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // Pagination state
+  const [searchTerm, setSearchTerm] = useState(""); // Search state
 
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "User",
-    status: "Active",
+    role: "user",
+    status: "active",
+    password: "",
+    mobile: "",
   });
 
-  const handleAddUser = (e) => {
-    e.preventDefault();
-    const newEntry = {
-      id: users.length + 1,
-      ...newUser,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setUsers([...users, newEntry]);
-    setNewUser({ name: "", email: "", role: "User", status: "Active" });
-    setIsAddModalOpen(false);
-  };
+  // ✅ Fetch Users
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      setUsers(users.filter((u) => u.id !== id));
+      const token = localStorage.getItem("accessToken"); // 🔑 Get token from session
+      if (!token) {
+        setError("No token found. Please login again.");
+        setLoading(false);
+        return;
+      }
+
+      const res = await axios.get(`${config.BASE_URL}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setUsers(Array.isArray(res.data.result) ? res.data.result : res.data);
+    } catch (err) {
+      console.error("Error fetching users", err);
+      setError("Failed to fetch users");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleStatusToggle = (id) => {
-    setUsers(
-      users.map((u) =>
-        u.id === id ? { ...u, status: u.status === "Active" ? "Inactive" : "Active" } : u
-      )
-    );
+  // ✅ Add User
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+
+    if (!newUser.name || !newUser.email || !newUser.password || !newUser.mobile) {
+      alert("Please fill in all required fields ❌");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("accessToken"); // 🔑 from session
+      if (!token) {
+        alert("No token found. Please login again.");
+        return;
+      }
+
+      const payload = {
+        name: newUser.name.trim(),
+        email: newUser.email.trim(),
+        password: newUser.password,
+        role: newUser.role.toLowerCase(),
+        status: newUser.status.toLowerCase(),
+        mobile: newUser.mobile.trim(),
+      };
+
+      await axios.post(`${config.BASE_URL}/users`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      alert("User added successfully ✅");
+      setIsAddModalOpen(false);
+      setNewUser({
+        name: "",
+        email: "",
+        role: "user",
+        status: "active",
+        password: "",
+        mobile: "",
+      });
+      fetchUsers();
+    } catch (err) {
+      console.error("Error adding user", err.response?.data || err);
+      alert(err.response?.data?.message || "Failed to add user ❌");
+    }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // ✅ Search + Filter
+  const filteredUsers = useMemo(() => {
+    return users.filter(
+      (user) =>
+        (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  const totalItems = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / CONST.ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [totalPages, currentPage]);
+
+  const clampedPage = Math.max(1, Math.min(currentPage, totalPages));
+  const paginatedUsers = useMemo(() => {
+    const start = (clampedPage - 1) * CONST.ITEMS_PER_PAGE;
+    return filteredUsers.slice(start, start + CONST.ITEMS_PER_PAGE);
+  }, [filteredUsers, clampedPage]);
+
+  const goTo = (p) => {
+    const page = Math.max(1, Math.min(totalPages, p));
+    setCurrentPage(page);
+    window.scrollTo({ top: 200, behavior: "smooth" });
+  };
+
+  const renderPageButtons = () => {
+    const pages = [];
+    const maxButtons = CONST.PAGINATION_MAX_BUTTONS;
+    if (totalPages <= maxButtons) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      let left = Math.max(1, currentPage - 2);
+      let right = Math.min(totalPages, left + maxButtons - 1);
+      if (right - left < maxButtons - 1) {
+        const diff = maxButtons - (right - left + 1);
+        left = Math.max(1, left - diff);
+        right = Math.min(totalPages, left + maxButtons - 1);
+      }
+      for (let i = left; i <= right; i++) pages.push(i);
+      if (!pages.includes(1)) pages.unshift(1, "left-ellipsis");
+      if (!pages.includes(totalPages)) pages.push("right-ellipsis", totalPages);
+    }
+
+    return pages.map((p, idx) => {
+      if (p === "left-ellipsis" || p === "right-ellipsis") {
+        return (
+          <span key={`${p}-${idx}`} className="px-3 py-1 text-sm text-gray-500">
+            …
+          </span>
+        );
+      }
+      return (
+        <button
+          key={p}
+          aria-current={p === currentPage ? "page" : undefined}
+          onClick={() => goTo(p)}
+          className={`px-3 py-1 rounded-md text-sm font-medium transition transform ${
+            p === currentPage
+              ? CONST.ACTIVE_PAGE_CLASS
+              : "bg-white text-gray-700 hover:bg-yellow-100"
+          }`}
+        >
+          {p}
+        </button>
+      );
+    });
+  };
+
+  // ✅ Loading State
+  if (loading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <p className="text-gray-600 text-lg">Loading users...</p>
+      </div>
+    );
+  }
+
+  // ✅ Error UI
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center gap-4 px-4 text-center">
+        <X size={50} className="text-red-500" />
+        <h2 className="text-2xl font-bold text-red-600">{error}</h2>
+        <p className="text-gray-600">
+          Please check your internet connection or login again.
+        </p>
+        <button
+          onClick={fetchUsers}
+          className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-700">User Management</h2>
+      {/* 🔍 Search + Add Button */}
+      <div className="flex justify-between items-center mb-4">
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-3 py-2 border rounded-lg w-1/3 focus:ring-2 focus:ring-yellow-400"
+        />
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl shadow hover:bg-yellow-600 transition"
           onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 bg-yellow-500 px-4 py-2 rounded-lg text-white hover:bg-yellow-600 transition"
         >
-          <Plus size={18} /> Add User
+          <Plus size={16} /> Add User
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto bg-white rounded-2xl shadow-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+      {/* 📋 Users Table */}
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="w-full text-sm text-left border">
+          <thead className="bg-yellow-100 text-gray-700">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Role</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Created At</th>
-              <th className="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase">Actions</th>
+              <th className="p-3 border">Name</th>
+              <th className="p-3 border">Email</th>
+              <th className="p-3 border">Mobile</th>
+              <th className="p-3 border">Role</th>
+              <th className="p-3 border">Status</th>
+              <th className="p-3 border">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-yellow-50 transition-all duration-200">
-                <td className="px-6 py-4">{user.name}</td>
-                <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">{user.role}</td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      user.status === "Active"
-                        ? "bg-green-500 text-white"
-                        : "bg-red-500 text-white"
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">{user.createdAt}</td>
-                <td className="px-6 py-4 flex justify-center gap-2">
+          <tbody>
+            {paginatedUsers.map((user) => (
+              <tr key={user._id} className="hover:bg-gray-50">
+                <td className="p-3 border">{user.name}</td>
+                <td className="p-3 border">{user.email}</td>
+                <td className="p-3 border">{user.mobile}</td>
+                <td className="p-3 border capitalize">{user.role}</td>
+                <td className="p-3 border capitalize">{user.status}</td>
+                <td className="p-3 border">
                   <button
-                    className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded"
-                    onClick={() => { setSelectedUser(user); setIsViewModalOpen(true); }}
-                    title="View"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setIsViewModalOpen(true);
+                    }}
+                    className="text-blue-600 hover:underline"
                   >
-                    <Eye size={16} />
-                  </button>
-                  <button
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
-                    onClick={() => handleStatusToggle(user.id)}
-                    title="Toggle Status"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
-                    onClick={() => handleDelete(user.id)}
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
+                    View
                   </button>
                 </td>
               </tr>
             ))}
+            {paginatedUsers.length === 0 && (
+              <tr>
+                <td colSpan="6" className="text-center py-4 text-gray-500">
+                  No users found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Add User Modal */}
+      {/* 📄 Pagination */}
+      <div className="flex justify-center mt-4 gap-2">
+        <button
+          onClick={() => goTo(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 bg-white border rounded-md text-sm hover:bg-yellow-100 disabled:opacity-50"
+        >
+          <FaChevronLeft />
+        </button>
+        {renderPageButtons()}
+        <button
+          onClick={() => goTo(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 bg-white border rounded-md text-sm hover:bg-yellow-100 disabled:opacity-50"
+        >
+          <FaChevronRight />
+        </button>
+      </div>
+
+      {/* 👁 View Modal */}
+      {isViewModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+            <h2 className="text-lg font-bold mb-4">User Details</h2>
+            <p><strong>Name:</strong> {selectedUser.name}</p>
+            <p><strong>Email:</strong> {selectedUser.email}</p>
+            <p><strong>Mobile:</strong> {selectedUser.mobile}</p>
+            <p><strong>Role:</strong> {selectedUser.role}</p>
+            <p><strong>Status:</strong> {selectedUser.status}</p>
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ➕ Add User Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-              onClick={() => setIsAddModalOpen(false)}
-            >
-              <X size={20} />
-            </button>
-            <h3 className="text-xl font-semibold mb-4">Add New User</h3>
-            <form onSubmit={handleAddUser} className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+            <h2 className="text-lg font-bold mb-4">Add User</h2>
+            <form onSubmit={handleAddUser} className="space-y-3">
               <input
                 type="text"
                 placeholder="Name"
                 value={newUser.name}
                 onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="w-full px-3 py-2 border rounded-lg"
               />
               <input
                 type="email"
                 placeholder="Email"
                 value={newUser.email}
                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="w-full px-3 py-2 border rounded-lg"
               />
+              <input
+                type="text"
+                placeholder="Mobile"
+                value={newUser.mobile}
+                onChange={(e) => setNewUser({ ...newUser, mobile: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-sm text-gray-600"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />} Toggle Password
+              </button>
               <select
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="w-full px-3 py-2 border rounded-lg"
               >
-                <option>User</option>
-                <option>Admin</option>
-                <option>Moderator</option>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
               </select>
               <select
                 value={newUser.status}
                 onChange={(e) => setNewUser({ ...newUser, status: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                className="w-full px-3 py-2 border rounded-lg"
               >
-                <option>Active</option>
-                <option>Inactive</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
               </select>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
-                  onClick={() => setIsAddModalOpen(false)}
-                >
-                  Cancel
-                </button>
+              <div className="text-right">
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600"
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
                 >
-                  Add User
+                  Add
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* View User Modal */}
-      {isViewModalOpen && selectedUser && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
-            <button
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-              onClick={() => setIsViewModalOpen(false)}
-            >
-              <X size={20} />
-            </button>
-            <h3 className="text-xl font-semibold mb-4">User Details</h3>
-            <p><strong>Name:</strong> {selectedUser.name}</p>
-            <p><strong>Email:</strong> {selectedUser.email}</p>
-            <p><strong>Role:</strong> {selectedUser.role}</p>
-            <p><strong>Status:</strong> {selectedUser.status}</p>
-            <p><strong>Created At:</strong> {selectedUser.createdAt}</p>
           </div>
         </div>
       )}

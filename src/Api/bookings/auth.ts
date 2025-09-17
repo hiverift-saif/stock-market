@@ -4,7 +4,7 @@
 import client from "../client";
 
 // Login API
-export async function ApiLogin({ email, password }: { email: string; password: string }) {
+export default async function ApiLogin({ email, password }: { email: string; password: string }) {
   // यहां backend का सही login endpoint लगाना
   const res = await client.post("/auth/login", { email, password ,role:'user'});
 

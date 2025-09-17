@@ -106,7 +106,7 @@ const handleSubmit = async (e) => {
 
   try {
     const url = editCourseId
-      ? `${BASE_URL}/courses/updateCourse/${editCourseId}`
+      ? `${BASE_URL}/courses/${editCourseId}`
       : `${BASE_URL}/courses/createCrouses`;
     const method = editCourseId ? "PUT" : "POST";
 
@@ -171,7 +171,7 @@ const handleSubmit = async (e) => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/courses/deleteCourse/${courseId}`, { method: "DELETE" });
+      const res = await fetch(`${BASE_URL}courses/${courseId}`, { method: "DELETE" });
       if (res.ok) {
         setCourses((prev) => prev.filter((c) => c.id !== courseId && c._id !== courseId));
       } else {

@@ -20,7 +20,7 @@ const Sidebar = () => {
   const menuItems = [
     { name: "Dashboard", icon: <HomeIcon className="h-5 w-5" />, path: "/user-dashboard" },
     { name: "My Courses", icon: <BookOpenIcon className="h-5 w-5" />, path: "/user-dashboard/my-courses" },
-    { name: "My Consultations", icon: <ChatBubbleBottomCenterIcon className="h-5 w-5" />, path: "/user-dashboard/my-consultations" },
+    { name: "My Appoitnment", icon: <ChatBubbleBottomCenterIcon className="h-5 w-5" />, path: "/user-dashboard/my-consultations" },
     { name: "My Webinars", icon: <PresentationChartLineIcon className="h-5 w-5" />, path: "/user-dashboard/my-webinars" },
     // { name: "Groups", icon: <UsersIcon className="h-5 w-5" />, path: "/user-dashboard/groups" },
     { name: "Profile / KYC", icon: <UserCircleIcon className="h-5 w-5" />, path: "/user-dashboard/profile-kyc" },

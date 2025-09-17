@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -21,7 +22,7 @@ import NotFount from "../src/NotFound";
 // User Dashboard pages
 import UserDashboard from "./userdashboard/UserDashboard";
 import MyCourses from "./userdashboard/MyCourses";
-import MyConsultations from "./userdashboard/MyConsultations";
+import MyAppointment from "./userdashboard/MyAppointment";
 import MyWebinars from "./userdashboard/MyWebinars";
 // import Groups from "./userdashboard/Groups";
 import ProfileKYC from "./userdashboard/ProfileKYC";
@@ -42,14 +43,30 @@ import KycVerification from "./Admindashboard/Kycverification";
 // import AdminCategory from "./Admindashboard/AdminCategory";
 import CategorySection from "./Admindashboard/CategorySection";
 import SubcategorySection from "./Admindashboard/SubcategorySection";
+import AdminServiceAdd from "./Admindashboard/AdminServices";
+import AdminProfile from "./Admindashboard/AdminProfile";
 
-// Wrapper to conditionally show Navbar
+// -------- ProtectedRoute component --------
+const ProtectedRoute = ({ children, role }) => {
+  const token = localStorage.getItem("accessToken"); // ✅ login ke baad jo store karte ho
+  const user = JSON.parse(localStorage.getItem("user")); // ✅ user ka pura object
+  console.log("ProtectedRoute user:", user,token);
+  if (!token) {
+    // Not logged in
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role && user?.role !== role) {
+    // Agar role mismatch hua
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 const AppWrapper = ({ children }) => {
   const location = useLocation();
-  const hideNavbarPaths = [
-    "/user-dashboard",
-    "/admin-dashboard", // ✅ admin ke liye bhi navbar hatana hai
-  ];
+  const hideNavbarPaths = ["/user-dashboard", "/admin-dashboard"];
 
   const hideNavbar = hideNavbarPaths.some((path) =>
     location.pathname.startsWith(path)
@@ -62,6 +79,26 @@ const AppWrapper = ({ children }) => {
     </>
   );
 };
+
+// Wrapper to conditionally show Navbar
+// const AppWrapper = ({ children }) => {
+//   const location = useLocation();
+//   const hideNavbarPaths = [
+//     "/user-dashboard",
+//     "/admin-dashboard", //
+//   ];
+
+//   const hideNavbar = hideNavbarPaths.some((path) =>
+//     location.pathname.startsWith(path)
+//   );
+
+//   return (
+//     <>
+//       {!hideNavbar && <Navbar />}
+//       {children}
+//     </>
+//   );
+// };
 
 function App() {
   return (
@@ -83,26 +120,43 @@ function App() {
           <Route path="/appointment" element={<Appointment />} />
 
           {/* ✅ User Dashboard nested routes */}
-          <Route path="/user-dashboard" element={<UserDashboard />}>
+
+          {/* ✅ User Dashboard protected */}
+          <Route
+            path="/user-dashboard"
+            element={
+              <ProtectedRoute role="user">
+                <UserDashboard />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardHome />} />
             <Route path="my-courses" element={<MyCourses />} />
-            <Route path="my-consultations" element={<MyConsultations />} />
+            <Route path="my-consultations" element={<MyAppointment />} />
             <Route path="my-webinars" element={<MyWebinars />} />
-            {/* <Route path="groups" element={<Groups />} /> */}
             <Route path="profile-kyc" element={<ProfileKYC />} />
           </Route>
 
-          {/* ✅ Admin Dashboard nested routes */}
-          <Route path="/admin-dashboard" element={<AdminDashboard />}>
+          {/* ✅ Admin Dashboard protected */}
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminDashboardHome />} />
             <Route path="courses" element={<AdminCourse />} />
             <Route path="webinars" element={<AdminWebinar />} />
             <Route path="appointments" element={<AdminAppoinment />} />
             <Route path="payments" element={<Adminpayments />} />
+            <Route path="services" element={<AdminServiceAdd />} />
             <Route path="user-management" element={<UserManagement />} />
             <Route path="kyc-verification" element={<KycVerification />} />
             <Route path="CategorySection" element={<CategorySection />} />
             <Route path="SubcategorySection" element={<SubcategorySection />} />
+            <Route path="adminProfile" element={<AdminProfile />} />
           </Route>
 
           <Route path="*" element={<NotFount />} />

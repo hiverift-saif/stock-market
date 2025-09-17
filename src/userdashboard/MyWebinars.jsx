@@ -118,7 +118,7 @@ const MyWebinars = () => {
       {" "}
       {/* Push below navbar */}
       <div className="text-white text-center text-lg font-semibold mx-auto px-4 sm:px-6 lg:px-8 space-y-4 w-full ">
-        <div className="maindiv flex justify-between items-center border border-red-600 py-6 px-4 rounded-md shadow-sm bg-red-50">
+        {/* <div className="maindiv flex justify-between items-center border border-red-600 py-6 px-4 rounded-md shadow-sm bg-red-50">
           <div className="text-black text-left">
             <p className="font-semibold">Live Now: Market Opening Analysis</p>
             <p className="text-xs text-gray-600">892 people watching</p>
@@ -129,7 +129,7 @@ const MyWebinars = () => {
             <FaPause className="text-xs" />
             <span>Join Live</span>
           </button>
-        </div>
+        </div> */}
 
         {/* Tabs */}
         <div className="rounded-xl p-6">

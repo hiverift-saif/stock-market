@@ -10,7 +10,7 @@ const Course = () => {
     <div className='font-sans'>
       <Navbar/>
       <CourseHero/>
-      <Category/>
+      {/* <Category/> */}
       <CourseBenefits/>
       <Footer className=""/>
     </div>

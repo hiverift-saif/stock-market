@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Users, BookOpen, DollarSign, Video, FileText, TrendingUp, Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid , Cell } from 'recharts';
 import config from '../pages/config';
 
 const AdminDashboardHome = () => {
@@ -124,15 +124,31 @@ const AdminDashboardHome = () => {
         {/* Graph Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold mb-4">Platform Overview</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#f59e0b" barSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
+        <ResponsiveContainer width="100%" height={300}>
+  <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="name" />
+    <YAxis />
+    <Tooltip />
+    <Bar dataKey="value" barSize={40}>
+      {chartData.map((entry, index) => (
+        <Cell
+          key={`cell-${index}`}
+          fill={
+            [
+              "#3b82f6", // Users - Blue
+              "#10b981", // Courses - Green
+              "#f59e0b", // Revenue - Amber
+              "#ef4444", // Webinars - Red
+              "#8b5cf6", // KYC - Purple
+            ][index % 5]
+          }
+        />
+      ))}
+    </Bar>
+  </BarChart>
+</ResponsiveContainer>
+
         </div>
       </div>
     </div>

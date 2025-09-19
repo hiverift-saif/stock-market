@@ -13,12 +13,6 @@ import {
 } from "lucide-react";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import { LuFileText } from "react-icons/lu";
-import { AiOutlinePhone } from "react-icons/ai";
-import { AiOutlineQuestionCircle } from "react-icons/ai";
-import { AiOutlineLock } from "react-icons/ai";
-import { MdOutlineCalendarMonth } from "react-icons/md";
-import { CiUser } from "react-icons/ci";
-import { AiOutlineSecurityScan } from "react-icons/ai";
 import { BiSolidArrowToTop } from "react-icons/bi";
 
 import axios from "axios";
@@ -104,9 +98,9 @@ const ProfileKYC = () => {
     if (ref && ref.current) ref.current.click();
   };
 
-  // handler: update uploaded files and previews
+  // handler: update uploaded files and previews with validation
   const handleFileChange = (type, file) => {
-    if (file) {
+    if (file && ['image/jpeg', 'image/png'].includes(file.type)) {
       setUploadedFiles((prev) => ({
         ...prev,
         [type]: file,
@@ -115,6 +109,12 @@ const ProfileKYC = () => {
         ...prev,
         [type]: URL.createObjectURL(file),
       }));
+    } else {
+      Swal.fire({
+        title: "Invalid File",
+        text: "Please upload a valid JPG or PNG file.",
+        icon: "error",
+      });
     }
   };
 
@@ -135,15 +135,22 @@ const ProfileKYC = () => {
     }
 
     const formData = new FormData();
-    formData.append("aadhar_front", uploadedFiles.aadhar_front);
-    formData.append("aadhar_back", uploadedFiles.aadhar_back);
+    // Use field names expected by the backend (update these based on API documentation)
+    formData.append("aadhaar_front", uploadedFiles.aadhar_front);
+    formData.append("aadhaar_back", uploadedFiles.aadhar_back);
     formData.append("pan_front", uploadedFiles.pan_front);
     formData.append("pan_back", uploadedFiles.pan_back);
     formData.append("userId", userId);
 
+    // Log FormData entries for debugging
+    for (let pair of formData.entries()) {
+      console.log(`FormData: ${pair[0]}: ${pair[1]}`);
+    }
+
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
+      console.log('token after login', token);
 
       if (!token) {
         Swal.fire({
@@ -196,21 +203,7 @@ const ProfileKYC = () => {
           }));
         }
 
-        // Clear uploaded files and previews after successful submission
-        setUploadedFiles({
-          aadhar_front: null,
-          aadhar_back: null,
-          pan_front: null,
-          pan_back: null,
-        });
-        setFilePreviews({
-          aadhar_front: null,
-          aadhar_back: null,
-          pan_front: null,
-          pan_back: null,
-        });
-
-        // Reset file inputs
+        // Reset file inputs but keep previews for viewing/replacing
         if (aadharFrontInputRef.current) aadharFrontInputRef.current.value = null;
         if (aadharBackInputRef.current) aadharBackInputRef.current.value = null;
         if (panFrontInputRef.current) panFrontInputRef.current.value = null;
@@ -219,11 +212,11 @@ const ProfileKYC = () => {
         throw new Error(res?.data?.message || "Unexpected response");
       }
     } catch (err) {
-      console.error("KYC upload error:", err);
+      console.error("KYC upload error:", err.response?.data || err.message);
       Swal.fire({
         title: "Upload failed",
         text:
-          err?.response?.data?.message ||
+          err.response?.data?.message ||
           "Please try again. Ensure the file format is correct (e.g., JPG, PNG).",
         icon: "error",
       });
@@ -252,15 +245,15 @@ const ProfileKYC = () => {
 
   // Handler for Edit Profile
   const handleEditProfile = () => {
-    setEditProfileData({ ...profileData }); // Initialize edit form with current profile data
-    setIsEditing(true); // Enable edit mode
+    setEditProfileData({ ...profileData });
+    setIsEditing(true);
   };
 
   // Handler for saving profile changes
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         Swal.fire({
           title: "Authentication Error",
@@ -279,14 +272,14 @@ const ProfileKYC = () => {
       );
 
       if (res?.data?.statusCode === 200) {
-        setProfileData(editProfileData); // Update profile data
-        localStorage.setItem("user", JSON.stringify(editProfileData)); // Update localStorage
+        setProfileData(editProfileData);
+        localStorage.setItem("user", JSON.stringify(editProfileData));
         Swal.fire({
           title: "Success",
           text: "Profile updated successfully",
           icon: "success",
         });
-        setIsEditing(false); // Exit edit mode
+        setIsEditing(false);
       } else {
         throw new Error(res?.data?.message || "Failed to update profile");
       }
@@ -304,8 +297,8 @@ const ProfileKYC = () => {
 
   // Handler for canceling edit
   const handleCancelEdit = () => {
-    setEditProfileData(null); // Clear edit data
-    setIsEditing(false); // Exit edit mode
+    setEditProfileData(null);
+    setIsEditing(false);
   };
 
   // Handler for input changes in edit form
@@ -319,7 +312,7 @@ const ProfileKYC = () => {
     const init = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("accessToken");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         // Fetch user profile
@@ -462,30 +455,11 @@ const ProfileKYC = () => {
           View All Payments
         </button>
       </div>
-
-      {/* <div className="bg-white border border-gray-200 rounded-lg shadow p-4 hover:bg-yellow-100 transition-colors">
-        <h1 className="text-lg text-gray-900 mb-4">Need Help?</h1>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-2 rounded hover:bg-yellow-200 cursor-pointer">
-            <AiOutlinePhone className="w-5 h-5 text-blue-600" />
-            <h1 className="text-sm font-medium text-gray-900">Contact Support</h1>
-          </div>
-          <div className="flex items-center gap-3 p-2 rounded hover:bg-yellow-200 cursor-pointer">
-            <AiOutlineQuestionCircle className="w-5 h-5 text-blue-600" />
-            <h1 className="text-sm font-medium text-gray-900">FAQ Guide</h1>
-          </div>
-          <div className="flex items-center gap-3 p-2 rounded hover:bg-yellow-200 cursor-pointer">
-            <AiOutlineLock className="w-5 h-5 text-blue-600" />
-            <h1 className="text-sm font-medium text-gray-900">Security Settings</h1>
-          </div>
-        </div>
-      </div> */}
     </div>
   );
 
   // Render Profile Tab
   const renderProfileTab = () => (
-
     <div className="space-y-8">
       <div className="bg-white shadow-md border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg text-gray-900 mb-6">Personal Information</h3>
@@ -725,14 +699,14 @@ const ProfileKYC = () => {
         </div>
       </div>
       <div>
-        <h1 className="text-lg text-gray-900 mb-4">Document Previews</h1>
+        <h1 className="text-lg text-gray-900 mb-4">Upload and View Documents</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
-            { key: "aadhar_front", label: "Aadhaar Card (Front)" },
-            { key: "aadhar_back", label: "Aadhaar Card (Back)" },
-            { key: "pan_front", label: "PAN Card (Front)" },
-            { key: "pan_back", label: "PAN Card (Back)" },
-          ].map(({ key, label }) => (
+            { key: "aadhar_front", label: "Aadhaar Card (Front)", ref: aadharFrontInputRef, onChange: onAadharFrontChange },
+            { key: "aadhar_back", label: "Aadhaar Card (Back)", ref: aadharBackInputRef, onChange: onAadharBackChange },
+            { key: "pan_front", label: "PAN Card (Front)", ref: panFrontInputRef, onChange: onPanFrontChange },
+            { key: "pan_back", label: "PAN Card (Back)", ref: panBackInputRef, onChange: onPanBackChange },
+          ].map(({ key, label, ref, onChange }) => (
             <div
               key={key}
               className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
@@ -742,17 +716,37 @@ const ProfileKYC = () => {
                 <img
                   src={filePreviews[key]}
                   alt={label}
-                  className="w-full h-48 object-contain rounded-md"
+                  className="w-full h-48 object-contain rounded-md mb-4"
                   onError={(e) => (e.target.src = "/placeholder-image.jpg")}
                 />
               ) : (
-                <div className="w-full h-48 flex items-center justify-center bg-gray-100 rounded-md">
+                <div className="w-full h-48 flex items-center justify-center bg-gray-100 rounded-md mb-4">
                   <p className="text-gray-500 text-sm">No file uploaded</p>
                 </div>
               )}
+              <input
+                type="file"
+                ref={ref}
+                className="hidden"
+                onChange={onChange}
+                accept="image/jpeg,image/png"
+              />
+              <button
+                onClick={() => handleFileInputClick(ref)}
+                className="w-full flex items-center justify-center gap-2 hover:bg-yellow-200 text-black py-5 rounded-lg shadow border border-gray-400"
+              >
+                <BiSolidArrowToTop className="w-5 h-5" />
+                {uploadedFiles[key] ? `Replace ${label.split(' ')[0]} (${label.split(' ')[2]})` : `Upload ${label.split(' ')[0]} (${label.split(' ')[2]})`}
+              </button>
             </div>
           ))}
         </div>
+        <button
+          onClick={handleFileUpload}
+          className="w-full mt-4 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow"
+        >
+          Submit All Documents
+        </button>
       </div>
       <div>
         <h1 className="text-lg text-gray-900 mb-4">Verification Process</h1>
@@ -784,81 +778,6 @@ const ProfileKYC = () => {
               <p className="text-sm text-gray-600">Documents under review by our team</p>
             </div>
           </div>
-          <div className="space-y-4">
-            <h1 className="text-lg text-gray-900">Upload Additional Documents</h1>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <input
-                  type="file"
-                  ref={aadharFrontInputRef}
-                  className="hidden"
-                  onChange={onAadharFrontChange}
-                  accept="image/jpeg,image/png"
-                />
-                <button
-                  onClick={() => handleFileInputClick(aadharFrontInputRef)}
-                  className="w-full flex items-center justify-center gap-2 hover:bg-yellow-200 text-black py-5 rounded-lg shadow border border-gray-400"
-                >
-                  <BiSolidArrowToTop className="w-5 h-5" />
-                  Upload Aadhaar (Front)
-                </button>
-              </div>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  ref={aadharBackInputRef}
-                  className="hidden"
-                  onChange={onAadharBackChange}
-                  accept="image/jpeg,image/png"
-                />
-                <button
-                  onClick={() => handleFileInputClick(aadharBackInputRef)}
-                  className="w-full flex items-center justify-center gap-2 hover:bg-yellow-200 text-black py-5 rounded-lg shadow border border-gray-400"
-                >
-                  <BiSolidArrowToTop className="w-5 h-5" />
-                  Upload Aadhaar (Back)
-                </button>
-              </div>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  ref={panFrontInputRef}
-                  className="hidden"
-                  onChange={onPanFrontChange}
-                  accept="image/jpeg,image/png"
-                />
-                <button
-                  onClick={() => handleFileInputClick(panFrontInputRef)}
-                  className="w-full flex items-center justify-center gap-2 hover:bg-yellow-200 text-black py-5 rounded-lg shadow border border-gray-400"
-                >
-                  <BiSolidArrowToTop className="w-5 h-5" />
-                  Upload PAN (Front)
-                </button>
-              </div>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  ref={panBackInputRef}
-                  className="hidden"
-                  onChange={onPanBackChange}
-                  accept="image/jpeg,image/png"
-                />
-                <button
-                  onClick={() => handleFileInputClick(panBackInputRef)}
-                  className="w-full flex items-center justify-center gap-2 hover:bg-yellow-200 text-black py-5 rounded-lg shadow border border-gray-400"
-                >
-                  <BiSolidArrowToTop className="w-5 h-5" />
-                  Upload PAN (Back)
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={handleFileUpload}
-              className="w-full mt-4 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow"
-            >
-              Submit All Documents
-            </button>
-          </div>
           <div className="mt-6">
             <h1 className="text-lg text-gray-900 mb-4">Benefits of KYC Verification</h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-green-100 border border-green-400 rounded-lg p-4 shadow-sm">
@@ -884,61 +803,6 @@ const ProfileKYC = () => {
       </div>
     </div>
   );
-
-  // Render Activity Tab
-  // const renderActivityTab = () => (
-  //   <div>
-  //     <h3 className="text-lg text-gray-900 mb-6">Recent Activity</h3>
-  //     <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-3">
-  //       <div className="flex items-center gap-3">
-  //         <MdOutlineCalendarMonth className="w-6 h-6 text-yellow-300" />
-  //         <div>
-  //           <h1 className="text-sm font-medium text-gray-900">Joined webinar: Market Analysis Weekly</h1>
-  //           <p className="text-xs text-gray-600">2024-08-29 at 2:30 PM</p>
-  //         </div>
-  //       </div>
-  //       <span className="mt-2 sm:mt-0 inline-flex px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-  //         Webinar
-  //       </span>
-  //     </div>
-  //     <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-3">
-  //       <div className="flex items-center gap-3">
-  //         <LuFileText className="w-6 h-6 text-yellow-300" />
-  //         <div>
-  //           <h1 className="text-sm font-medium text-gray-900">Completed lesson: Risk Management Strategies</h1>
-  //           <p className="text-xs text-gray-600">2024-08-28 at 10:15 AM</p>
-  //         </div>
-  //       </div>
-  //       <span className="mt-2 sm:mt-0 inline-flex px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-  //         Course
-  //       </span>
-  //     </div>
-  //     <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-3">
-  //       <div className="flex items-center gap-3">
-  //         <CiUser className="w-6 h-6 text-yellow-300" />
-  //         <div>
-  //           <h1 className="text-sm font-medium text-gray-900">Consultation session with CA Rajesh Kumar</h1>
-  //           <p className="text-xs text-gray-600">2024-08-27 at 4:45 PM</p>
-  //         </div>
-  //       </div>
-  //       <span className="mt-2 sm:mt-0 inline-flex px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-  //         Consultation
-  //       </span>
-  //     </div>
-  //     <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-3">
-  //       <div className="flex items-center gap-3">
-  //         <AiOutlineSecurityScan className="w-6 h-6 text-yellow-300" />
-  //         <div>
-  //           <h1 className="text-sm font-medium text-gray-900">Joined Elite Options Trading Circle</h1>
-  //           <p className="text-xs text-gray-600">2024-08-26 at 11:20 AM</p>
-  //         </div>
-  //       </div>
-  //       <span className="mt-2 sm:mt-0 inline-flex px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-  //         Group
-  //       </span>
-  //     </div>
-  //   </div>
-  // );
 
   // Main Render
   if (loading) {
@@ -966,7 +830,7 @@ const ProfileKYC = () => {
           </button>
         </div>
         <div className="flex border-b border-gray-200 mb-8">
-          {["profile", "kyc", "activity"].map((tab) => (
+          {["profile", "kyc"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -976,7 +840,7 @@ const ProfileKYC = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              {tab === "profile" ? "Profile" : tab === "kyc" ? "KYC Status" : ""}
+              {tab === "profile" ? "Profile" : "KYC Status"}
             </button>
           ))}
         </div>
@@ -984,7 +848,6 @@ const ProfileKYC = () => {
           <div className="lg:col-span-2 rounded-lg">
             {activeTab === "profile" && renderProfileTab()}
             {activeTab === "kyc" && renderKYCTab()}
-            {/* {activeTab === "activity" && renderActivityTab()} */}
           </div>
           <div>{renderSidebar()}</div>
         </div>

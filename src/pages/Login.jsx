@@ -242,7 +242,7 @@ function LoginPage() {
 
       {/* Security Note */}
       <p className="absolute  bottom-0 text-xs text-gray-500 text-center px-4">
-        Your data is protected with bank-level security
+        {/* Your data is protected with bank-level security */}
       </p>
     </div>
   );

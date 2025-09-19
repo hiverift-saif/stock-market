@@ -80,13 +80,21 @@ const AdminCourseTable = () => {
     fetchSubCategories();
   }, [formData.categoryId]);
 
-  const filteredCourses = useMemo(() => {
-    return courses.filter(
-      (c) =>
-        c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.instructor?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [courses, searchQuery]);
+  
+const filteredCourses = useMemo(() => {
+  const normalize = (str) =>
+    str?.toLowerCase().replace(/\s+/g, " ").trim() || "";
+
+  const query = normalize(searchQuery);
+
+  return courses.filter(
+    (c) =>
+      normalize(c.title).includes(query) ||
+      normalize(c.instructor).includes(query)
+  );
+}, [courses, searchQuery]);
+
+
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
   const indexOfLast = currentPage * coursesPerPage;
@@ -223,6 +231,7 @@ const handleSubmit = async (e) => {
       {/* Search */}
       <div className="flex items-center border rounded-lg px-3 py-2 w-72 mb-4">
         <Search size={18} className="text-gray-500 mr-2" />
+
         <input
           type="text"
           placeholder="Search courses..."
@@ -230,6 +239,7 @@ const handleSubmit = async (e) => {
           onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
           className="flex-1 outline-none"
         />
+        
       </div>
 
       {/* Table */}

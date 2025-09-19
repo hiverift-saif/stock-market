@@ -53,8 +53,12 @@ const Sidebar = () => {
         ${isOpen ? "translate-x-0" : "-translate-x-full"} 
         md:translate-x-0 md:w-64 w-64 flex flex-col py-6 px-4`}
       >
-        <div className="flex-1 overflow-y-auto">
-          <h1 className="text-xl  mb-8">CA ki Stock Market</h1>
+        <div className="flex-1 overflow-y-auto "   >
+{/* onClick={() => navigate("/")} */}
+
+          <h1 className="text-xl  mb-8 cursor-pointer ">CA ki Stock Market</h1>
+
+
           <nav className="flex flex-col gap-4">
             {menuItems.map((item, idx) => (
               <NavLink

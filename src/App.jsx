@@ -45,6 +45,7 @@ import CategorySection from "./Admindashboard/CategorySection";
 import SubcategorySection from "./Admindashboard/SubcategorySection";
 import AdminServiceAdd from "./Admindashboard/AdminServices";
 import AdminProfile from "./Admindashboard/AdminProfile";
+import Adminorder from "./Admindashboard/Adminorder";
 
 // -------- ProtectedRoute component --------
 const ProtectedRoute = ({ children, role }) => {
@@ -157,6 +158,7 @@ function App() {
             <Route path="CategorySection" element={<CategorySection />} />
             <Route path="SubcategorySection" element={<SubcategorySection />} />
             <Route path="adminProfile" element={<AdminProfile />} />
+            <Route path="Adminorder" element={<Adminorder />} />
           </Route>
 
           <Route path="*" element={<NotFount />} />

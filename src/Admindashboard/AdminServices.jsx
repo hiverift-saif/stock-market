@@ -95,13 +95,13 @@ const AdminService = () => {
   return (
     <div className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <div className="max-w-8xl mx-auto">
-        <h2 className="text-4xl font-bold text-gray-800 mb-10 text-center">
+        <h2 className="text-4xl  text-gray-800 mb-10 text-center">
           🛠️ Service Management
         </h2>
 
         {/* Form */}
         <div className="bg-white p-8 rounded-2xl shadow-lg mb-10">
-          <h3 className="text-xl font-semibold text-gray-700 mb-6 border-b pb-3 flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-gray-700 mb-6 border-b border-gray-300 pb-3 flex items-center gap-2">
             <Plus className="w-5 h-5 text-yellow-500" />
             {editingService ? "Edit Service" : "Add New Service"}
           </h3>
@@ -117,7 +117,7 @@ const AdminService = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Consultation (30 mins)"
-                className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
               />
             </div>
 
@@ -128,10 +128,11 @@ const AdminService = () => {
               </label>
               <input
                 type="number"
+                min= "1"
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(e.target.value)}
                 placeholder="30"
-                className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
               />
             </div>
 
@@ -142,10 +143,11 @@ const AdminService = () => {
               </label>
               <input
                 type="number"
+                   min= "1"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="999"
-                className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
               />
             </div>
 
@@ -168,7 +170,7 @@ const AdminService = () => {
 
         {/* Services List */}
         <div className="bg-white p-8 rounded-2xl shadow-lg">
-          <h3 className="text-xl font-semibold text-gray-700 mb-6 border-b pb-3">
+          <h3 className="text-xl  text-gray-700 mb-6 border-b border-gray-300 pb-3">
             📋 All Services
           </h3>
           {services.length === 0 ? (
@@ -176,23 +178,23 @@ const AdminService = () => {
           ) : (
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-gray-100 text-gray-700">
-                  <th className="p-3 border">Name</th>
-                  <th className="p-3 border">Duration (mins)</th>
-                  <th className="p-3 border">Price (₹)</th>
-                  <th className="p-3 border">Actions</th>
+                <tr className=" text-gray-700">
+                  <th className="p-3 border border-gray-300">Name</th>
+                  <th className="p-3 border border-gray-300">Duration (mins)</th>
+                  <th className="p-3 border border-gray-300">Price (₹)</th>
+                  <th className="p-3 border border-gray-300">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {services.map((service) => (
                   <tr
                     key={service._id}
-                    className="hover:bg-gray-50 text-center transition"
+                    className="hover:bg-yellow-50 text-center transition"
                   >
-                    <td className="p-3 border">{service.name}</td>
-                    <td className="p-3 border">{service.durationMinutes}</td>
-                    <td className="p-3 border font-semibold">₹{service.price}</td>
-                    <td className="p-3 border flex items-center justify-center gap-2">
+                    <td className="p-3 border border-gray-300">{service.name}</td>
+                    <td className="p-3 border border-gray-300">{service.durationMinutes}</td>
+                    <td className="p-3 border border-gray-300 ">₹{service.price}</td>
+                    <td className="p-3 border border-gray-300 flex items-center justify-center gap-2">
                       <button
                         onClick={() => handleView(service)}
                         className="p-2 bg-blue-100 rounded hover:bg-blue-200"

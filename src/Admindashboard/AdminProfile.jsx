@@ -1,44 +1,70 @@
 import React, { useState, useEffect } from "react";
 import { User } from "lucide-react";
-// import axios from "axios";  // agar API call se data laana ho to
+import axios from "axios";
+import config from "../pages/config"; // ✅ BASE_URL from config.js
 
 const AdminProfile = () => {
   const [adminProfile, setAdminProfile] = useState({
+    _id: "",
     name: "",
     email: "",
     phone: "",
     password: "",
   });
 
-  // ✅ Prefill data (ye backend/API se aa sakta hai)
+  const token = localStorage.getItem("token"); // ✅ Token from localStorage
+  const userId= localStorage.getItem('user');
+
+  // ✅ Profile GET API call
   useEffect(() => {
-    // Example static data (baad me API call se replace kar lena)
-    const existingAdmin = {
-      name: "Shahbaz Khan",
-      email: "shahbaz@example.com",
-      phone: "9876543210",
-      password: "admin@123", // ⚠️ real project me password prefill karna secure nahi hota
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(`${config.BASE_URL}users/${userId._id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+         console.log('hii',res)
+        // ✅ assume response.data.result me user data aata h
+        setAdminProfile(res.data.result);
+      } catch (err) {
+        console.error("❌ Error fetching profile:", err);
+      }
     };
 
-    setAdminProfile(existingAdmin);
+    if (token) fetchProfile();
+  }, [token]);
 
-    // Agar API call karni ho:
-    /*
-    axios.get("/api/admin/profile").then((res) => {
-      setAdminProfile(res.data);
-    });
-    */
-  }, []);
-
+  // ✅ Input change handler
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setAdminProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleProfileSave = () => {
-    console.log("Updated Admin Profile:", adminProfile);
-    alert("✅ Admin Profile Updated!");
-    // ✅ API call: axios.post("/admin/updateProfile", adminProfile)
+  // ✅ Profile Update API call
+  const handleProfileSave = async () => {
+    try {
+      const res = await axios.patch(
+        `${config.BASE_URL}users/${adminProfile._id}`, // ✅ userId dynamic
+        {
+          name: adminProfile.name,
+          email: adminProfile.email,
+          phone: adminProfile.phone,
+          password: adminProfile.password,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("✅ Updated Admin Profile:", res.data);
+      alert("✅ Admin Profile Updated!");
+    } catch (err) {
+      console.error("❌ Error updating profile:", err);
+      alert("❌ Failed to update profile");
+    }
   };
 
   return (

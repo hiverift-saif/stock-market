@@ -8,7 +8,7 @@ import {
   createBooking,
   confirmPayment,
 } from "../Api/bookings/bookings";
-import ApiLogin from "../Api/bookings/auth";
+import ApiLogin from "../Api/bookings/auth.js";
 import { sendBookingEmails } from "../Api/notification/notifications";
 import { useNavigate } from "react-router-dom";
 
@@ -43,50 +43,69 @@ export default function AppointmentPage() {
     setIsAuthenticated(Boolean(token));
   }, []);
 
-  const doLogin = async (form) => {
-    // Basic form validation
-    if (!form.email || !form.password) {
-      setLoginError("Please enter both email and password");
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setLoginError("Please enter a valid email address");
-      return;
-    }
+const doLogin = async (form) => {
+  console.log("Trying login with:", loginForm.email, loginForm.password);
 
-    setLoginLoading(true);
-    setLoginError("");
+  if (!form.email || !form.password) {
+    setLoginError("Please enter both email and password");
+    return;
+  }
+  if (!/\S+@\S+\.\S+/.test(form.email)) {
+    setLoginError("Please enter a valid email address");
+    return;
+  }
 
-    try {
-      const data = await ApiLogin(form);
-      console.log("Login success", data);
-      console.log('token',data.user._id)
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("userId",data.user._id);
-      if (data.user?._id) localStorage.setItem("user", data.user);
-      if (data.user?.name) localStorage.setItem("userName", data.user.name);
-      if (data.user?.email) localStorage.setItem("userEmail", data.user.email);
+  setLoginLoading(true);
+  setLoginError("");
 
-      setIsAuthenticated(true);
-      setShowLoginModal(false);
+  try {
+    const data = await ApiLogin(form);
+    console.log("ApiLogin returned:", data);
 
-      if (typeof postLoginAction === "function") {
-        postLoginAction();
-        setPostLoginAction(null);
+    // token: prefer returned token else localStorage (auth.js may already have stored it)
+    const token = data?.token ?? localStorage.getItem("token") ?? data?.accessToken ?? data?.jwt ?? null;
+
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("accessToken", token);
+    } else {
+      // server might be using httpOnly cookie — treat login as success if API indicates success or user present
+      if (!(data?.success || data?.user || data?._id)) {
+        throw new Error("Login failed: no token and no user info returned");
       }
-
-      console.log('Post login action executed',localStorage.getItem("userId"));
-    } catch (err) {
-      console.error("Login failed", err);
-      const message =
-        err.response?.status === 401
-          ? "Invalid email or password"
-          : err.response?.data?.message || err.message || "Login failed";
-      setLoginError(message);
-    } finally {
-      setLoginLoading(false);
     }
-  };
+
+    // Normalize user
+    const user = data?.user ?? data;
+    if (user) {
+      if (user._id || user.id) localStorage.setItem("userId", user._id ?? user.id);
+      if (user.name) localStorage.setItem("userName", user.name);
+      if (user.email) localStorage.setItem("userEmail", user.email);
+      try {
+        localStorage.setItem("user", JSON.stringify(user));
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    setIsAuthenticated(true);
+    setShowLoginModal(false);
+
+    if (typeof postLoginAction === "function") {
+      postLoginAction();
+      setPostLoginAction(null);
+    }
+  } catch (err) {
+    console.error("Login failed", err);
+    const message =
+      err.response?.status === 401
+        ? "Invalid email or password"
+        : err.response?.data?.message || err.message || "Login failed";
+    setLoginError(message);
+  } finally {
+    setLoginLoading(false);
+  }
+};
 
   const openLoginModal = (afterLoginAction = null) => {
     setLoginError("");
@@ -95,16 +114,17 @@ export default function AppointmentPage() {
     setPostLoginAction(() => afterLoginAction ?? null);
   };
 
-  const requireAuthInline = (actionIfAuthenticated) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      openLoginModal(actionIfAuthenticated);
-      return false;
-    }
-    setIsAuthenticated(true);
-    if (typeof actionIfAuthenticated === "function") actionIfAuthenticated();
-    return true;
-  };
+const requireAuthInline = (actionIfAuthenticated) => {
+  const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+  if (!token) {
+    openLoginModal(actionIfAuthenticated);
+    return false;
+  }
+  setIsAuthenticated(true);
+  if (typeof actionIfAuthenticated === "function") actionIfAuthenticated();
+  return true;
+};
+
 
   useEffect(() => {
     (async () => {

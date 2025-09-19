@@ -20,7 +20,7 @@ const AdminAppointment = () => {
   const [toDate, setToDate] = useState(null);
   const [selectedTimes, setSelectedTimes] = useState([]);
   const [serviceId, setServiceId] = useState("");
-  const [capacity, setCapacity] = useState(1);
+  const [capacity, setCapacity] = useState("");
   const [savedSlots, setSavedSlots] = useState([]);
   const [services, setServices] = useState([]);
 
@@ -72,7 +72,7 @@ const AdminAppointment = () => {
       setFromDate(null);
       setToDate(null);
       setSelectedTimes([]);
-      setCapacity(1);
+      setCapacity("");
     }
   } catch (err) {
     console.error("Error saving slots:", err);
@@ -136,12 +136,17 @@ const AdminAppointment = () => {
 
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">Capacity</p>
-              <input
-                type="number"
-                value={capacity}
-                onChange={(e) => setCapacity(Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-yellow-400 outline-none"
-              />
+     <input
+  type="number"
+  value={capacity}
+  min={1} // negative prevent
+  onChange={(e) => {
+    const val = e.target.value;
+    setCapacity(val === "" ? "" : Number(val));
+  }}
+  className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-yellow-400 outline-none"
+/>
+
             </div>
           </div>
         </div>

@@ -328,7 +328,7 @@ const MyAppointment = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myBookings.map((booking) => (
-            <div key={booking.id} className="bg-white p-4 rounded-xl shadow-md border">
+            <div key={booking.id} className="bg-white p-4 rounded-xl shadow-md border border-gray-300">
               <h2 className="font-semibold text-lg">{booking.serviceName}</h2>
               <p className="text-gray-600">
                 <strong>Date:</strong> {moment(booking.date).format("DD MMM YYYY")}

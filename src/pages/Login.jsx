@@ -18,6 +18,7 @@ function LoginPage() {
     email: "",
     mobile: "",
     password: "",
+    
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false); // ✅ toggle password visibility

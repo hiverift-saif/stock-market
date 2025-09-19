@@ -12,21 +12,15 @@ const KycVerificationAdmin = ({ userId = "68b1a01074ad0c19f272b438" }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Fetch KYC details
   const fetchKyc = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("accessToken");
-
       const res = await axios.get(`${config.BASE_URL}kyc/status/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.data?.statusCode === 200) {
-        setKycDetails(res.data.result);
-      } else {
-        setError("Failed to fetch KYC details");
-      }
+      if (res.data?.statusCode === 200) setKycDetails(res.data.result);
+      else setError("Failed to fetch KYC details");
     } catch (err) {
       console.error("Error fetching KYC:", err);
       setError("Something went wrong while fetching KYC details");
@@ -39,28 +33,45 @@ const KycVerificationAdmin = ({ userId = "68b1a01074ad0c19f272b438" }) => {
     if (userId) fetchKyc();
   }, [userId]);
 
-  // ✅ Update Status
   const handleUpdateStatus = async (status) => {
     try {
       setUpdating(true);
       const token = localStorage.getItem("accessToken");
 
-      await axios.put(
+      const res = await axios.put(
         `${config.BASE_URL}kyc/update-status/${userId}`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setKycDetails((prev) => ({ ...prev, status }));
+      if (res.data?.statusCode === 200) {
+        Swal.fire({
+          icon: "success",
+          title: `KYC ${status}`,
+          text: `User KYC has been ${status} successfully.`,
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        setKycDetails((prev) => ({ ...prev, status }));
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Update Failed",
+          text: "Unable to update KYC status",
+        });
+      }
     } catch (err) {
       console.error("Error updating KYC status:", err);
-      alert("Failed to update KYC status");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong while updating KYC",
+      });
     } finally {
       setUpdating(false);
     }
   };
 
-  // ✅ Eye click hone par modal me image dikhana
   const handlePreview = (src, label) => {
     Swal.fire({
       title: label,
@@ -85,17 +96,24 @@ const KycVerificationAdmin = ({ userId = "68b1a01074ad0c19f272b438" }) => {
   ];
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-        KYC Verification
-      </h2>
-
-      {/* Status & Info */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-4 bg-gray-50 rounded-xl border">
-          <p className="text-sm text-gray-500">Status</p>
+ <div className="overflow-x-auto">
+  <table className="min-w-full divide-y divide-gray-200 border  text-gray-300  rounded shadow">
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="px-4 py-2 text-left text-sm font-medium text-gray-7
+        00">Status</th>
+        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Remark</th>
+        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Uploaded</th>
+        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Documents</th>
+        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
+      </tr>
+    </thead>
+    <tbody className="bg-white divide-y divide-gray-200">
+      <tr>
+        {/* Status */}
+        <td className="px-4 py-3">
           <span
-            className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium capitalize ${
+            className={`px-3 py-1 rounded-full font-medium capitalize text-sm ${
               kycDetails.status === "verified"
                 ? "bg-green-100 text-green-700"
                 : kycDetails.status === "pending"
@@ -105,67 +123,59 @@ const KycVerificationAdmin = ({ userId = "68b1a01074ad0c19f272b438" }) => {
           >
             {kycDetails.status}
           </span>
-        </div>
-        <div className="p-4 bg-gray-50 rounded-xl border">
-          <p className="text-sm text-gray-500">Remark</p>
-          <p className="mt-1 text-gray-700">
-            {kycDetails.remark || "No remark"}
-          </p>
-        </div>
-        <div className="p-4 bg-gray-50 rounded-xl border">
-          <p className="text-sm text-gray-500">Uploaded Date</p>
-          <p className="mt-1 text-gray-700">
-            {new Date(kycDetails.uploadedDate).toLocaleString()}
-          </p>
-        </div>
-      </div>
+        </td>
 
-      {/* Documents in single row */}
-      <div className="overflow-x-auto">
-        <table className="w-full border border-gray-200 rounded-lg shadow-sm">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              {documents.map((doc, idx) => (
-                <th key={idx} className="p-3 border text-center">
-                  {doc.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              {documents.map((doc, idx) => (
-                <td
-                  key={idx}
-                  className="p-3 border text-center cursor-pointer"
-                  onClick={() => handlePreview(doc.src, doc.label)}
-                >
-                  <Eye className="w-6 h-6 text-blue-600 inline hover:scale-110 transition" />
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        {/* Remark */}
+        <td className="px-4 py-3 text-sm">{kycDetails.remark || "No remark"}</td>
 
-      {/* Approve / Reject */}
-      <div className="flex gap-4 justify-end">
-        <button
-          onClick={() => handleUpdateStatus("verified")}
-          disabled={updating}
-          className="px-5 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 shadow"
-        >
-          Approve
-        </button>
-        <button
-          onClick={() => handleUpdateStatus("rejected")}
-          disabled={updating}
-          className="px-5 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 shadow"
-        >
-          Reject
-        </button>
-      </div>
-    </div>
+        {/* Uploaded */}
+        <td className="px-4 py-3 text-sm">
+          {new Date(kycDetails.uploadedDate).toLocaleString()}
+        </td>
+
+        {/* Documents */}
+        <td className="px-4 py-3">
+          <div className="flex flex-wrap gap-3">
+            {documents.map(
+              (doc, idx) =>
+                doc.src && (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center cursor-pointer"
+                    onClick={() => handlePreview(doc.src, doc.label)}
+                  >
+                    <Eye className="w-5 h-5 text-blue-600 hover:scale-110 transition" />
+                    <span className="text-xs mt-1">{doc.label}</span>
+                  </div>
+                )
+            )}
+          </div>
+        </td>
+
+        {/* Actions */}
+        <td className="px-4 py-3 text-sm">
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleUpdateStatus("verified")}
+              disabled={updating}
+              className="flex-1 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => handleUpdateStatus("rejected")}
+              disabled={updating}
+              className="flex-1 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
+            >
+              Reject
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
   );
 };
 

@@ -20,7 +20,7 @@ export default function CourseHero() {
       try {
         const res = await fetch(`${config.BASE_URL}courses/getAllCourses`);
         const data = await res.json();
-
+        console.log(data)
         const liveCourses = data.result.filter((course) => course.mode === "Live");
         const recordedCourses = data.result.filter((course) => course.mode === "Recorded");
 
@@ -51,7 +51,8 @@ export default function CourseHero() {
 
   // ✅ Enroll button → checkout page
   const handleEnroll = (course) => {
-    navigate("/checkout", { state: { course } });
+    
+    navigate("/checkout", { state: { course ,coursetype:'course'} });
   };
 
   // ✅ Loading state

@@ -64,7 +64,7 @@ const Webinars = () => {
   );
 
   const handleRegister = (webinar) => {
-    navigate("/checkout", { state: { webinar } });
+    navigate("/checkout", { state: { webinar ,webinartype:'webinar'} });
   };
 
   return (
